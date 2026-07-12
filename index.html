@@ -235,8 +235,8 @@
 // CONFIGURATION — edit these three values for your repository
 // ════════════════════════════════════════════════════════════════════════
 const CONFIG = {
-  owner:       'georgiarutherford06-wq',
-  repo:        'Ornispectra_Surveys',
+  owner:       'YOUR_GITHUB_USERNAME',
+  repo:        'YOUR_REPO_NAME',
   branch:      'main',
   reportsPath: 'reports',              // folder containing *.json + *.html + *_media/
   overridesPath: 'verification-overrides.json',
@@ -273,7 +273,8 @@ async function loadReports() {
     const jsonFiles = items.filter(f => f.name.endsWith('.json'));
 
     const parsed = await Promise.all(jsonFiles.map(async f => {
-      const r = await fetch(f.download_url);
+      // Private repos require auth on the raw download too, not just the listing.
+      const r = await fetch(f.download_url, { headers: ghHeaders() });
       const data = await r.json();
       data._file = f.name;
       return data;
@@ -429,13 +430,13 @@ function showSpeciesPanel(siteName, report, species) {
     const card = document.createElement('div');
     card.className = 'clip-card';
     card.innerHTML = `
-      <img class="spectro" src="${RAW_BASE}/${CONFIG.reportsPath}/${clip.spectrogram}" alt="Spectrogram" loading="lazy">
+      <img class="spectro" alt="Spectrogram" loading="lazy">
       <div class="clip-row">
         <span class="conf mono">${(clip.confidence * 100).toFixed(1)}% confidence</span>
         <span class="mono">${clip.timestamp}</span>
       </div>
       <div class="clip-actions">
-        <button class="btn ghost play-btn" data-report="${report._file}" data-anchor="${clip.audio_anchor_id}">▶ Play</button>
+        <button class="btn ghost play-btn" data-report="${report.report_html_file}" data-anchor="${clip.audio_anchor_id}">▶ Play</button>
         <div class="verify-check ${githubToken ? '' : 'disabled'}">
           <input type="checkbox" id="verify-${overrideKey.replace(/[^a-zA-Z0-9]/g,'_')}" ${isVerified ? 'checked' : ''} ${githubToken ? '' : 'disabled'}>
           <label for="verify-${overrideKey.replace(/[^a-zA-Z0-9]/g,'_')}">Human verified</label>
@@ -443,6 +444,12 @@ function showSpeciesPanel(siteName, report, species) {
       </div>
       <div class="audio-slot" style="margin-top:8px;"></div>
     `;
+
+    // Private repos require an auth header, which <img src> can't send —
+    // fetch the spectrogram as a blob and assign it as an object URL instead.
+    loadAuthenticatedBlobUrl(`${RAW_BASE}/${CONFIG.reportsPath}/${clip.spectrogram}`)
+      .then(url => { card.querySelector('.spectro').src = url; })
+      .catch(err => console.warn('Spectrogram failed to load:', err.message));
 
     card.querySelector('.play-btn').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
@@ -472,9 +479,16 @@ function showSpeciesPanel(siteName, report, species) {
 // Fetches the report's HTML once (cached), then regex-extracts the base64
 // data URL for the specific clip's <audio id="audio-{clipId}"> element.
 // ════════════════════════════════════════════════════════════════════════
+async function loadAuthenticatedBlobUrl(url) {
+  const res = await fetch(url, { headers: ghHeaders() });
+  if (!res.ok) throw new Error(`fetch failed (${res.status})`);
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 async function extractAudioSrc(reportFile, anchorId) {
   if (!htmlCache[reportFile]) {
-    const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`);
+    const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
     if (!res.ok) throw new Error(`report HTML not found (${res.status})`);
     htmlCache[reportFile] = await res.text();
   }
