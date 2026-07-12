@@ -147,6 +147,9 @@
   .clip-row .conf{ font-family:'JetBrains Mono',monospace; }
   .clip-actions{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
   audio{ height:32px; max-width:180px; }
+  .species-panel-title{ margin-bottom:14px; }
+  .species-panel-title h3{ font-size:1.15rem; color:var(--bark); }
+  .species-panel-title .species-panel-latin{ font-style:italic; font-size:.85rem; color:var(--ink-soft); margin-top:2px; }
   .verify-check{ display:flex; align-items:center; gap:6px; font-size:.78rem; }
   .verify-check input[type=checkbox]{ width:15px; height:15px; accent-color:var(--moss); cursor:pointer; }
   .verify-check.disabled{ opacity:.45; }
@@ -495,7 +498,12 @@ function showSpeciesPanel(siteName, report, species) {
   `;
   document.getElementById('back-to-report').addEventListener('click', () => showReportPanel(siteName, report));
 
-  panelScroll.innerHTML = '';
+  panelScroll.innerHTML = `
+    <div class="species-panel-title">
+      <h3>${species.common_name}</h3>
+      <div class="species-panel-latin">${species.latin_name}</div>
+    </div>
+  `;
 
   species.clips.forEach(clip => {
     const overrideKey = `${report._file}:${clip.id}`;
