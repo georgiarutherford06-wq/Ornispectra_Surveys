@@ -54,6 +54,11 @@
   .btn:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
   .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,.4); }
   .btn.ghost:hover{ background:rgba(255,255,255,.1); }
+  /* For buttons on light card backgrounds (e.g. the clip player), not the dark topbar */
+  .btn.on-light{
+    background:transparent; color:var(--moss); border:1px solid var(--moss);
+  }
+  .btn.on-light:hover{ background:var(--moss); color:#fff; }
   .btn:disabled{ opacity:.4; cursor:not-allowed; }
 
   /* ── Layout ────────────────────────────────────────────────── */
@@ -238,7 +243,7 @@ const CONFIG = {
   owner:       'georgiarutherford06-wq',
   repo:        'Ornispectra_Surveys',
   branch:      'main',
-  reportsPath: 'reports',
+  reportsPath: 'reports',              // folder containing *.json + *.html + *_media/
   overridesPath: 'verification-overrides.json',
 };
 
@@ -436,7 +441,7 @@ function showSpeciesPanel(siteName, report, species) {
         <span class="mono">${clip.timestamp}</span>
       </div>
       <div class="clip-actions">
-        <button class="btn ghost play-btn" data-report="${report.report_html_file}" data-anchor="${clip.audio_anchor_id}">▶ Play</button>
+        <button class="btn on-light play-btn" data-report="${report.report_html_file}" data-anchor="${clip.audio_anchor_id}">▶ Play</button>
         <div class="verify-check ${githubToken ? '' : 'disabled'}">
           <input type="checkbox" id="verify-${overrideKey.replace(/[^a-zA-Z0-9]/g,'_')}" ${isVerified ? 'checked' : ''} ${githubToken ? '' : 'disabled'}>
           <label for="verify-${overrideKey.replace(/[^a-zA-Z0-9]/g,'_')}">Human verified</label>
