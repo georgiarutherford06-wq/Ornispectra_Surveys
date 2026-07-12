@@ -640,6 +640,7 @@ function buildSpeciesOverview() {
           sites:       new Set(),
           n_surveys:   0,
           total_clips: 0,
+          sampled_clips: 0,
           verified_clips: 0,
           best_confidence: 0,
           bng: new Set(),
@@ -652,7 +653,8 @@ function buildSpeciesOverview() {
       const agg = bySpecies[sp.common_name];
       agg.sites.add(siteName);
       agg.n_surveys += 1;
-      agg.total_clips += sp.clips.length;
+      agg.total_clips += sp.n_clips;
+      agg.sampled_clips += sp.clips.length;
       sp.bng_categories.forEach(c => agg.bng.add(c));
       if (isRedlisted.has(sp.common_name)) agg.redlist = true;
       if (sp.bocc_status === 'Amber') agg.amber = true;
@@ -679,7 +681,7 @@ function buildSpeciesOverview() {
   overviewRows = Object.values(bySpecies).map(agg => ({
     ...agg,
     n_sites: agg.sites.size,
-    verified_pct: agg.total_clips ? agg.verified_clips / agg.total_clips : 0,
+    verified_pct: agg.sampled_clips ? agg.verified_clips / agg.sampled_clips : 0,
     bng: Array.from(agg.bng),
   }));
 }
@@ -714,7 +716,7 @@ function renderOverviewTable() {
       <td class="mono">${row.n_surveys}</td>
       <td class="mono">${row.total_clips}</td>
       <td class="mono">
-        <span class="verified-bar"><span class="verified-bar-fill" style="width:${verifiedPct}%"></span></span>${verifiedPct}% (${row.verified_clips}/${row.total_clips})
+        <span class="verified-bar"><span class="verified-bar-fill" style="width:${verifiedPct}%"></span></span>${verifiedPct}% (${row.verified_clips}/${row.sampled_clips} sampled)
       </td>
       <td class="mono">${(row.best_confidence * 100).toFixed(0)}%</td>
       <td>${row.bng.map(c => `<span class="bng-tag">${c}</span>`).join('') || '—'}</td>
