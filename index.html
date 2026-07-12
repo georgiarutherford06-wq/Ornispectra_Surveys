@@ -219,11 +219,24 @@
   #overview-table td.species-cell .latin{ font-size:.72rem; font-style:italic; color:var(--ink-soft); display:block; }
   #overview-table td.mono{ font-family:'JetBrains Mono',monospace; }
   .redlist-flag{ color:var(--red); font-weight:600; }
+  .amber-flag{ color:var(--amber); font-weight:600; }
   .verified-bar{
     display:inline-block; width:60px; height:6px; background:var(--parchment-dim);
     border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px;
   }
   .verified-bar-fill{ height:100%; background:var(--moss); }
+
+  #overview-table tbody tr.species-row-main td.species-cell{ position:relative; padding-left:28px; }
+  #overview-table tbody tr.species-row-main td.species-cell::before{
+    content:'▸'; position:absolute; left:10px; color:var(--ink-soft); font-size:.7rem;
+    transition:transform .15s;
+  }
+  #overview-table tbody tr.species-row-main.expanded td.species-cell::before{ transform:rotate(90deg); }
+  tr.occurrence-row{ background:var(--parchment-dim); cursor:pointer; }
+  tr.occurrence-row:hover{ background:#e3ddcb; }
+  tr.occurrence-row td{ padding:8px 12px 8px 44px; font-size:.8rem; color:var(--ink-soft); border-bottom:1px solid var(--line); }
+  tr.occurrence-row .occ-site{ color:var(--ink); font-weight:500; }
+  tr.occurrence-row .occ-arrow{ color:var(--moss); margin-left:6px; }
 </style>
 </head>
 <body>
@@ -269,6 +282,7 @@
           <th data-key="best_confidence">Best conf.</th>
           <th data-key="bng">BNG categories</th>
           <th data-key="redlist">Red-list</th>
+          <th data-key="amber">Amber-list</th>
         </tr>
       </thead>
       <tbody id="overview-tbody"></tbody>
@@ -630,8 +644,9 @@ function buildSpeciesOverview() {
           best_confidence: 0,
           bng: new Set(),
           redlist: false,
-          // Track the single strongest detection so a click can jump straight to it.
-          best_ref: null,
+          amber: false,
+          // Every site/survey this species was detected in, for the expand-to-sites view.
+          occurrences: [],
         };
       }
       const agg = bySpecies[sp.common_name];
@@ -640,6 +655,7 @@ function buildSpeciesOverview() {
       agg.total_clips += sp.clips.length;
       sp.bng_categories.forEach(c => agg.bng.add(c));
       if (isRedlisted.has(sp.common_name)) agg.redlist = true;
+      if (sp.bocc_status === 'Amber') agg.amber = true;
 
       sp.clips.forEach(clip => {
         const overrideKey = `${report._file}:${clip.id}`;
@@ -648,9 +664,14 @@ function buildSpeciesOverview() {
         if (isVerified) agg.verified_clips += 1;
       });
 
+      agg.occurrences.push({
+        siteName, report, species: sp,
+        confidence: sp.best_confidence,
+        surveyDate: report.survey.survey_start,
+      });
+
       if (sp.best_confidence > agg.best_confidence) {
         agg.best_confidence = sp.best_confidence;
-        agg.best_ref = { siteName, report };
       }
     });
   });
@@ -668,7 +689,8 @@ function renderOverviewTable() {
   const sorted = [...overviewRows].sort((a, b) => {
     let av = a[key], bv = b[key];
     if (key === 'redlist') { av = a.redlist ? 1 : 0; bv = b.redlist ? 1 : 0; }
-    if (key === 'bng')      { av = a.bng.length; bv = b.bng.length; }
+    if (key === 'amber')   { av = a.amber ? 1 : 0;   bv = b.amber ? 1 : 0; }
+    if (key === 'bng')     { av = a.bng.length; bv = b.bng.length; }
     if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
     if (av < bv) return dir === 'asc' ? -1 : 1;
     if (av > bv) return dir === 'asc' ? 1 : -1;
@@ -677,9 +699,11 @@ function renderOverviewTable() {
 
   const tbody = document.getElementById('overview-tbody');
   tbody.innerHTML = '';
+  const expanded = new Set(); // common_names currently expanded, local to this render pass
 
   sorted.forEach(row => {
     const tr = document.createElement('tr');
+    tr.className = 'species-row-main';
     const verifiedPct = Math.round(row.verified_pct * 100);
     tr.innerHTML = `
       <td class="species-cell">
@@ -695,15 +719,41 @@ function renderOverviewTable() {
       <td class="mono">${(row.best_confidence * 100).toFixed(0)}%</td>
       <td>${row.bng.map(c => `<span class="bng-tag">${c}</span>`).join('') || '—'}</td>
       <td>${row.redlist ? '<span class="redlist-flag">⚠ Yes</span>' : '—'}</td>
+      <td>${row.amber ? '<span class="amber-flag">● Yes</span>' : '—'}</td>
     `;
+
+    // Sub-rows listing every site/survey this species was detected in.
+    // Built once, toggled visible/hidden rather than rebuilt on each click.
+    const occRows = [...row.occurrences]
+      .sort((a, b) => (b.surveyDate || '').localeCompare(a.surveyDate || ''))
+      .map(occ => {
+        const occTr = document.createElement('tr');
+        occTr.className = 'occurrence-row';
+        occTr.style.display = 'none';
+        occTr.innerHTML = `
+          <td colspan="9">
+            <span class="occ-site">${occ.siteName}</span>
+            — ${occ.surveyDate || 'undated'} · ${(occ.confidence * 100).toFixed(0)}% confidence
+            <span class="occ-arrow">→ view spectrograms</span>
+          </td>
+        `;
+        occTr.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showView('map');
+          const site = sitesIndex[occ.siteName];
+          if (site) map.setView([site.lat, site.lon], 14);
+          showSpeciesPanel(occ.siteName, occ.report, occ.species);
+        });
+        return occTr;
+      });
+
     tr.addEventListener('click', () => {
-      if (!row.best_ref) return;
-      showView('map');
-      showReportPanel(row.best_ref.siteName, row.best_ref.report);
-      const site = sitesIndex[row.best_ref.siteName];
-      if (site) map.setView([site.lat, site.lon], 14);
+      const isExpanded = tr.classList.toggle('expanded');
+      occRows.forEach(r => { r.style.display = isExpanded ? 'table-row' : 'none'; });
     });
+
     tbody.appendChild(tr);
+    occRows.forEach(r => tbody.appendChild(r));
   });
 
   // Update sort-indicator classes on headers
