@@ -454,8 +454,10 @@ function showReportPanel(siteName, report) {
     <div class="eyebrow">Survey</div>
     <h2>${report.survey.survey_start}</h2>
     <div class="coords mono">${report.survey.n_species} species · ${report.survey.n_files} files</div>
+    <button class="btn on-light" id="open-full-report" style="margin-top:10px;">Open full report ↗</button>
   `;
   document.getElementById('back-to-site').addEventListener('click', () => showSitePanel(siteName));
+  document.getElementById('open-full-report').addEventListener('click', () => openFullReport(report.report_html_file));
 
   panelScroll.innerHTML = '';
 
@@ -495,8 +497,10 @@ function showSpeciesPanel(siteName, report, species) {
     <div class="eyebrow">Species</div>
     <h2>${species.common_name}</h2>
     <div class="coords" style="font-style:italic;">${species.latin_name}</div>
+    <button class="btn on-light" id="open-full-report" style="margin-top:10px;">Open full report ↗</button>
   `;
   document.getElementById('back-to-report').addEventListener('click', () => showReportPanel(siteName, report));
+  document.getElementById('open-full-report').addEventListener('click', () => openFullReport(report.report_html_file));
 
   panelScroll.innerHTML = `
     <div class="species-panel-title">
@@ -567,6 +571,27 @@ async function loadAuthenticatedBlobUrl(url) {
   if (!res.ok) throw new Error(`fetch failed (${res.status})`);
   const blob = await res.blob();
   return URL.createObjectURL(blob);
+}
+
+async function openFullReport(reportFile) {
+  try {
+    // Reuse the cached HTML text if we've already fetched it for audio playback;
+    // otherwise fetch fresh. Either way, open it as a real rendered page via a
+    // Blob URL rather than linking straight to raw.githubusercontent.com, which
+    // would (a) fail auth on a plain link for a private repo, and (b) serve the
+    // file as plain text rather than rendering it.
+    const html = htmlCache[reportFile] || await (async () => {
+      const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
+      if (!res.ok) throw new Error(`report not found (${res.status})`);
+      const text = await res.text();
+      htmlCache[reportFile] = text;
+      return text;
+    })();
+    const blob = new Blob([html], { type: 'text/html' });
+    window.open(URL.createObjectURL(blob), '_blank');
+  } catch (err) {
+    showToast(`Couldn't open report: ${err.message}`);
+  }
 }
 
 async function extractAudioSrc(reportFile, anchorId) {
