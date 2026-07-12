@@ -735,7 +735,7 @@ function renderOverviewTable() {
         occTr.innerHTML = `
           <td colspan="9">
             <span class="occ-site">${occ.siteName}</span>
-            — ${occ.surveyDate || 'undated'} · ${(occ.confidence * 100).toFixed(0)}% confidence
+            — ${occ.surveyDate || 'undated'} · ${occ.species.n_clips} clip${occ.species.n_clips !== 1 ? 's' : ''} · ${(occ.confidence * 100).toFixed(0)}% confidence
             <span class="occ-arrow">→ view spectrograms</span>
           </td>
         `;
