@@ -192,6 +192,38 @@
     #panel{ width:100%; min-width:0; height:55%; border-left:none; border-top:1px solid var(--line); }
     #map{ height:45%; }
   }
+
+  /* ── Species overview ──────────────────────────────────────── */
+  #overview{
+    height:calc(100% - 56px); overflow-y:auto; background:var(--parchment);
+  }
+  #overview-scroll{ max-width:1100px; margin:0 auto; padding-bottom:40px; }
+  #overview-table{
+    width:100%; border-collapse:collapse; background:#fff; margin:0 24px;
+    width:calc(100% - 48px); box-shadow:0 1px 3px rgba(0,0,0,.06); border-radius:6px; overflow:hidden;
+  }
+  #overview-table thead th{
+    text-align:left; font-family:'JetBrains Mono',monospace; font-size:.7rem;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);
+    background:var(--parchment-dim); padding:10px 12px; cursor:pointer; user-select:none;
+    border-bottom:1px solid var(--line);
+  }
+  #overview-table thead th:hover{ color:var(--pine); }
+  #overview-table thead th.sorted::after{ content:' ▾'; }
+  #overview-table thead th.sorted.asc::after{ content:' ▴'; }
+  #overview-table tbody tr{ cursor:pointer; border-bottom:1px solid var(--line); transition:background .1s; }
+  #overview-table tbody tr:last-child{ border-bottom:none; }
+  #overview-table tbody tr:hover{ background:var(--parchment-dim); }
+  #overview-table td{ padding:10px 12px; font-size:.85rem; vertical-align:middle; }
+  #overview-table td.species-cell .common{ font-weight:600; }
+  #overview-table td.species-cell .latin{ font-size:.72rem; font-style:italic; color:var(--ink-soft); display:block; }
+  #overview-table td.mono{ font-family:'JetBrains Mono',monospace; }
+  .redlist-flag{ color:var(--red); font-weight:600; }
+  .verified-bar{
+    display:inline-block; width:60px; height:6px; background:var(--parchment-dim);
+    border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px;
+  }
+  .verified-bar-fill{ height:100%; background:var(--moss); }
 </style>
 </head>
 <body>
@@ -202,6 +234,8 @@
     <span class="sub">survey dashboard</span>
   </div>
   <div id="auth-area">
+    <button class="btn ghost" id="view-map-btn" disabled>🗺 Map</button>
+    <button class="btn ghost" id="view-overview-btn">📊 Species Overview</button>
     <span id="auth-status">not signed in</span>
     <button class="btn ghost" id="signin-btn">Sign in to verify</button>
   </div>
@@ -217,6 +251,28 @@
         <p>Click a pin on the map to browse its surveys, species detections, and verified clips.</p>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="overview" style="display:none;">
+  <div id="overview-scroll">
+    <h2 style="padding:20px 24px 0;">Species across all surveys</h2>
+    <p style="padding:4px 24px 12px; color:var(--ink-soft); font-size:.85rem;">Click a column header to sort. Click a species to jump to its strongest detection.</p>
+    <table id="overview-table">
+      <thead>
+        <tr>
+          <th data-key="common_name">Species</th>
+          <th data-key="n_sites">Sites</th>
+          <th data-key="n_surveys">Surveys</th>
+          <th data-key="total_clips">Clips</th>
+          <th data-key="verified_pct">Verified</th>
+          <th data-key="best_confidence">Best conf.</th>
+          <th data-key="bng">BNG categories</th>
+          <th data-key="redlist">Red-list</th>
+        </tr>
+      </thead>
+      <tbody id="overview-tbody"></tbody>
+    </table>
   </div>
 </div>
 
@@ -548,6 +604,152 @@ async function setVerification(reportFile, clipId, verified) {
     console.error(err);
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// Species overview — aggregated across every loaded report
+// ════════════════════════════════════════════════════════════════════════
+let overviewRows = [];
+let overviewSort = { key: 'total_clips', dir: 'desc' };
+
+function buildSpeciesOverview() {
+  const bySpecies = {};
+
+  reports.forEach(report => {
+    const siteName = report.site?.name || 'Unnamed site';
+    const isRedlisted = new Set(report.detected_redlist || []);
+
+    report.species.forEach(sp => {
+      if (!bySpecies[sp.common_name]) {
+        bySpecies[sp.common_name] = {
+          common_name: sp.common_name,
+          latin_name:  sp.latin_name,
+          sites:       new Set(),
+          n_surveys:   0,
+          total_clips: 0,
+          verified_clips: 0,
+          best_confidence: 0,
+          bng: new Set(),
+          redlist: false,
+          // Track the single strongest detection so a click can jump straight to it.
+          best_ref: null,
+        };
+      }
+      const agg = bySpecies[sp.common_name];
+      agg.sites.add(siteName);
+      agg.n_surveys += 1;
+      agg.total_clips += sp.clips.length;
+      sp.bng_categories.forEach(c => agg.bng.add(c));
+      if (isRedlisted.has(sp.common_name)) agg.redlist = true;
+
+      sp.clips.forEach(clip => {
+        const overrideKey = `${report._file}:${clip.id}`;
+        const override = overrides[overrideKey];
+        const isVerified = override ? override.verified : clip.verified;
+        if (isVerified) agg.verified_clips += 1;
+      });
+
+      if (sp.best_confidence > agg.best_confidence) {
+        agg.best_confidence = sp.best_confidence;
+        agg.best_ref = { siteName, report };
+      }
+    });
+  });
+
+  overviewRows = Object.values(bySpecies).map(agg => ({
+    ...agg,
+    n_sites: agg.sites.size,
+    verified_pct: agg.total_clips ? agg.verified_clips / agg.total_clips : 0,
+    bng: Array.from(agg.bng),
+  }));
+}
+
+function renderOverviewTable() {
+  const { key, dir } = overviewSort;
+  const sorted = [...overviewRows].sort((a, b) => {
+    let av = a[key], bv = b[key];
+    if (key === 'redlist') { av = a.redlist ? 1 : 0; bv = b.redlist ? 1 : 0; }
+    if (key === 'bng')      { av = a.bng.length; bv = b.bng.length; }
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    if (av < bv) return dir === 'asc' ? -1 : 1;
+    if (av > bv) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('overview-tbody');
+  tbody.innerHTML = '';
+
+  sorted.forEach(row => {
+    const tr = document.createElement('tr');
+    const verifiedPct = Math.round(row.verified_pct * 100);
+    tr.innerHTML = `
+      <td class="species-cell">
+        <span class="common">${row.common_name}</span>
+        <span class="latin">${row.latin_name}</span>
+      </td>
+      <td class="mono">${row.n_sites}</td>
+      <td class="mono">${row.n_surveys}</td>
+      <td class="mono">${row.total_clips}</td>
+      <td class="mono">
+        <span class="verified-bar"><span class="verified-bar-fill" style="width:${verifiedPct}%"></span></span>${verifiedPct}% (${row.verified_clips}/${row.total_clips})
+      </td>
+      <td class="mono">${(row.best_confidence * 100).toFixed(0)}%</td>
+      <td>${row.bng.map(c => `<span class="bng-tag">${c}</span>`).join('') || '—'}</td>
+      <td>${row.redlist ? '<span class="redlist-flag">⚠ Yes</span>' : '—'}</td>
+    `;
+    tr.addEventListener('click', () => {
+      if (!row.best_ref) return;
+      showView('map');
+      showReportPanel(row.best_ref.siteName, row.best_ref.report);
+      const site = sitesIndex[row.best_ref.siteName];
+      if (site) map.setView([site.lat, site.lon], 14);
+    });
+    tbody.appendChild(tr);
+  });
+
+  // Update sort-indicator classes on headers
+  document.querySelectorAll('#overview-table th').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.key === key);
+    th.classList.toggle('asc', th.dataset.key === key && dir === 'asc');
+  });
+}
+
+document.querySelectorAll('#overview-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (overviewSort.key === key) {
+      overviewSort.dir = overviewSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      overviewSort = { key, dir: key === 'common_name' ? 'asc' : 'desc' };
+    }
+    renderOverviewTable();
+  });
+});
+
+// ── View toggle: map vs. species overview ──────────────────────────────
+function showView(view) {
+  const mapLayout = document.getElementById('layout');
+  const overview  = document.getElementById('overview');
+  const mapBtn    = document.getElementById('view-map-btn');
+  const overviewBtn = document.getElementById('view-overview-btn');
+
+  if (view === 'overview') {
+    mapLayout.style.display = 'none';
+    overview.style.display  = 'block';
+    mapBtn.disabled = false;
+    overviewBtn.disabled = true;
+    buildSpeciesOverview();
+    renderOverviewTable();
+  } else {
+    mapLayout.style.display = 'flex';
+    overview.style.display  = 'none';
+    mapBtn.disabled = true;
+    overviewBtn.disabled = false;
+    setTimeout(() => map.invalidateSize(), 50); // Leaflet needs a nudge after being hidden
+  }
+}
+
+document.getElementById('view-map-btn').addEventListener('click', () => showView('map'));
+document.getElementById('view-overview-btn').addEventListener('click', () => showView('overview'));
 
 // ════════════════════════════════════════════════════════════════════════
 // Sign-in modal
