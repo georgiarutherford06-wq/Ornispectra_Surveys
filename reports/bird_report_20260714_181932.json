@@ -1,9 +1,9 @@
 {
   "schema_version": "1.1",
   "site": {
-    "name": "Berrygrove Wood",
-    "lat": 51.706001,
-    "lon": -0.390905
+    "name": "Berrygrove Wood, Watford",
+    "lat": 51.70601,
+    "lon": -0.390932
   },
   "survey": {
     "generated": "14 July 2026, 18:19",
