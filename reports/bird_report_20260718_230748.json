@@ -1096,13 +1096,9 @@
       "best_confidence": 0.9995608925819397,
       "mean_confidence": 0.8963329792022705,
       "star_rating": 5,
-      "is_marginal": true,
-      "verification_reasons": [
-        "BNG Red List indicator"
-      ],
+      "is_marginal": false,
       "bng_categories": [
-        "ground",
-        "redlist"
+        "ground"
       ],
       "bocc_status": "Amber",
       "file_count": 25,
