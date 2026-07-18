@@ -509,11 +509,6 @@
       "files": 3
     }
   },
-  "detected_redlist": [
-    "Song Thrush",
-    "Mistle Thrush",
-    "Spotted Flycatcher"
-  ],
   "acoustic_health": {
     "biophony_minutes": 12.2,
     "anthropophony_minutes": 2.2,
@@ -1250,90 +1245,6 @@
       ]
     },
     {
-      "common_name": "Mistle Thrush",
-      "latin_name": "Turdus viscivorus",
-      "best_confidence": 0.986011266708374,
-      "mean_confidence": 0.8195931911468506,
-      "star_rating": 4,
-      "is_marginal": true,
-      "verification_reasons": [
-        "Detected in only one recording file \u2014 limited survey presence",
-        "BNG Red List indicator",
-        "BoCC5 Red List species \u2014 highest conservation concern"
-      ],
-      "bng_categories": [
-        "canopy",
-        "redlist"
-      ],
-      "bocc_status": "Red",
-      "file_count": 1,
-      "n_clips": 3,
-      "first_detected": "2026-07-18T06:20:22.369796",
-      "last_detected": "2026-07-18T06:20:37.578866",
-      "peak_hour": 6,
-      "hourly_counts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        3,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "clips": [
-        {
-          "id": "Mistle_Thrush_1",
-          "spectrogram": "bird_report_20260718_230748_media/spectrograms/Mistle_Thrush_1.png",
-          "audio_report_file": "bird_report_20260718_230748.html",
-          "audio_anchor_id": "audio-Mistle_Thrush_1",
-          "source_file": "20260718_062000.WAV",
-          "offset_s": 24.691791383219954,
-          "timestamp": "18 Jul 2026 06:20:24",
-          "confidence": 0.986011266708374,
-          "verified": false
-        },
-        {
-          "id": "Mistle_Thrush_2",
-          "spectrogram": "bird_report_20260718_230748_media/spectrograms/Mistle_Thrush_2.png",
-          "audio_report_file": "bird_report_20260718_230748.html",
-          "audio_anchor_id": "audio-Mistle_Thrush_2",
-          "source_file": "20260718_062000.WAV",
-          "offset_s": 22.36979591836735,
-          "timestamp": "18 Jul 2026 06:20:22",
-          "confidence": 0.981069803237915,
-          "verified": false
-        },
-        {
-          "id": "Mistle_Thrush_3",
-          "spectrogram": "bird_report_20260718_230748_media/spectrograms/Mistle_Thrush_3.png",
-          "audio_report_file": "bird_report_20260718_230748.html",
-          "audio_anchor_id": "audio-Mistle_Thrush_3",
-          "source_file": "20260718_062000.WAV",
-          "offset_s": 37.578866213151926,
-          "timestamp": "18 Jul 2026 06:20:37",
-          "confidence": 0.4916985332965851,
-          "verified": false
-        }
-      ]
-    },
-    {
       "common_name": "Blue Tit",
       "latin_name": "Cyanistes caeruleus",
       "best_confidence": 0.9770848751068115,
@@ -1408,79 +1319,6 @@
           "offset_s": 24.157732426303856,
           "timestamp": "18 Jul 2026 07:52:24",
           "confidence": 0.3129136860370636,
-          "verified": false
-        }
-      ]
-    },
-    {
-      "common_name": "Spotted Flycatcher",
-      "latin_name": "Muscicapa striata",
-      "best_confidence": 0.8578720092773438,
-      "mean_confidence": 0.8050282001495361,
-      "star_rating": 4,
-      "is_marginal": true,
-      "verification_reasons": [
-        "Detected in only one recording file \u2014 limited survey presence",
-        "BNG Red List indicator",
-        "BoCC5 Red List species \u2014 highest conservation concern"
-      ],
-      "bng_categories": [
-        "canopy",
-        "redlist"
-      ],
-      "bocc_status": "Red",
-      "file_count": 1,
-      "n_clips": 2,
-      "first_detected": "2026-07-18T10:28:13.685533",
-      "last_detected": "2026-07-18T10:28:26.270748",
-      "peak_hour": 10,
-      "hourly_counts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "clips": [
-        {
-          "id": "Spotted_Flycatcher_1",
-          "spectrogram": "bird_report_20260718_230748_media/spectrograms/Spotted_Flycatcher_1.png",
-          "audio_report_file": "bird_report_20260718_230748.html",
-          "audio_anchor_id": "audio-Spotted_Flycatcher_1",
-          "source_file": "20260718_102800.WAV",
-          "offset_s": 26.270748299319727,
-          "timestamp": "18 Jul 2026 10:28:26",
-          "confidence": 0.8578720092773438,
-          "verified": false
-        },
-        {
-          "id": "Spotted_Flycatcher_2",
-          "spectrogram": "bird_report_20260718_230748_media/spectrograms/Spotted_Flycatcher_2.png",
-          "audio_report_file": "bird_report_20260718_230748.html",
-          "audio_anchor_id": "audio-Spotted_Flycatcher_2",
-          "source_file": "20260718_102800.WAV",
-          "offset_s": 13.685532879818593,
-          "timestamp": "18 Jul 2026 10:28:13",
-          "confidence": 0.7521843314170837,
           "verified": false
         }
       ]
