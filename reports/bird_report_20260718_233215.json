@@ -648,9 +648,6 @@
       "files": 4
     }
   },
-  "detected_redlist": [
-    "Spotted Flycatcher"
-  ],
   "acoustic_health": {
     "biophony_minutes": 38.3,
     "anthropophony_minutes": 30.8,
@@ -1540,89 +1537,6 @@
           "timestamp": "13 Jul 2026 17:39:12",
           "confidence": 0.4721719026565552,
           "verified": true
-        }
-      ]
-    },
-    {
-      "common_name": "Spotted Flycatcher",
-      "latin_name": "Muscicapa striata",
-      "best_confidence": 0.9372305274009705,
-      "mean_confidence": 0.6621446013450623,
-      "star_rating": 4,
-      "is_marginal": true,
-      "verification_reasons": [
-        "BNG Red List indicator",
-        "BoCC5 Red List species \u2014 highest conservation concern"
-      ],
-      "bng_categories": [
-        "canopy",
-        "redlist"
-      ],
-      "bocc_status": "Red",
-      "file_count": 2,
-      "n_clips": 10,
-      "first_detected": "2026-07-13T19:21:01.425397",
-      "last_detected": "2026-07-14T17:09:49.188844",
-      "peak_hour": 17,
-      "hourly_counts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        5,
-        0,
-        5,
-        0,
-        0,
-        0,
-        0
-      ],
-      "clips": [
-        {
-          "id": "Spotted_Flycatcher_1",
-          "spectrogram": "bird_report_20260718_233215_media/spectrograms/Spotted_Flycatcher_1.png",
-          "audio_report_file": "bird_report_20260718_233215.html",
-          "audio_anchor_id": "audio-Spotted_Flycatcher_1",
-          "source_file": "20260713_192100.WAV",
-          "offset_s": 12.40843537414966,
-          "timestamp": "13 Jul 2026 19:21:12",
-          "confidence": 0.9372305274009705,
-          "verified": false
-        },
-        {
-          "id": "Spotted_Flycatcher_2",
-          "spectrogram": "bird_report_20260718_233215_media/spectrograms/Spotted_Flycatcher_2.png",
-          "audio_report_file": "bird_report_20260718_233215.html",
-          "audio_anchor_id": "audio-Spotted_Flycatcher_2",
-          "source_file": "20260714_170900.WAV",
-          "offset_s": 49.18884353741497,
-          "timestamp": "14 Jul 2026 17:09:49",
-          "confidence": 0.9159641861915588,
-          "verified": false
-        },
-        {
-          "id": "Spotted_Flycatcher_3",
-          "spectrogram": "bird_report_20260718_233215_media/spectrograms/Spotted_Flycatcher_3.png",
-          "audio_report_file": "bird_report_20260718_233215.html",
-          "audio_anchor_id": "audio-Spotted_Flycatcher_3",
-          "source_file": "20260714_170900.WAV",
-          "offset_s": 40.73678004535147,
-          "timestamp": "14 Jul 2026 17:09:40",
-          "confidence": 0.7730659246444702,
-          "verified": false
         }
       ]
     },
