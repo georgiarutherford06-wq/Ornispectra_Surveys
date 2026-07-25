@@ -1312,7 +1312,11 @@
       "best_confidence": 0.997256338596344,
       "mean_confidence": 0.6970709562301636,
       "star_rating": 5,
-      "is_marginal": false,
+      "is_marginal": true,
+      "verification_reasons": [
+        "BNG Red List indicator",
+        "BoCC5 Red List species \u2014 highest conservation concern"
+      ],
       "verification_reasons": [],
       "bng_categories": [],
       "bocc_status": null,
