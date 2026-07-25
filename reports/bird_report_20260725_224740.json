@@ -35,8 +35,7 @@
       "Eurasian Nuthatch",
       "Common Buzzard",
       "Red Kite",
-      "Western Jackdaw",
-      "Eurasian Bullfinch"
+      "Western Jackdaw"
     ],
     "hours": [
       "00:00",
@@ -2378,87 +2377,6 @@
           "offset_s": 18.81714285714286,
           "timestamp": "21 Jul 2026 07:56:18",
           "confidence": 0.5445787906646729,
-          "verified": false
-        }
-      ]
-    },
-    {
-      "common_name": "Eurasian Bullfinch",
-      "latin_name": "Pyrrhula pyrrhula",
-      "best_confidence": 0.49367445707321167,
-      "mean_confidence": 0.4235515892505646,
-      "star_rating": 1,
-      "is_marginal": true,
-      "verification_reasons": [
-        "Low AI confidence (1\u2605 \u2014 below 3\u2605 threshold)"
-      ],
-      "bng_categories": [
-        "understorey"
-      ],
-      "bocc_status": "Amber",
-      "file_count": 3,
-      "n_clips": 7,
-      "first_detected": "2026-07-19T19:20:37.346667",
-      "last_detected": "2026-07-20T12:36:27.640726",
-      "peak_hour": 19,
-      "hourly_counts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        5,
-        0,
-        0,
-        0,
-        0
-      ],
-      "clips": [
-        {
-          "id": "Eurasian_Bullfinch_1",
-          "spectrogram": "bird_report_20260725_224740_media/spectrograms/Eurasian_Bullfinch_1.png",
-          "audio_report_file": "bird_report_20260725_224740.html",
-          "audio_anchor_id": "audio-Eurasian_Bullfinch_1",
-          "source_file": "20260720_123600.WAV",
-          "offset_s": 24.83111111111111,
-          "timestamp": "20 Jul 2026 12:36:24",
-          "confidence": 0.49367445707321167,
-          "verified": false
-        },
-        {
-          "id": "Eurasian_Bullfinch_2",
-          "spectrogram": "bird_report_20260725_224740_media/spectrograms/Eurasian_Bullfinch_2.png",
-          "audio_report_file": "bird_report_20260725_224740.html",
-          "audio_anchor_id": "audio-Eurasian_Bullfinch_2",
-          "source_file": "20260719_194000.WAV",
-          "offset_s": 9.320181405895692,
-          "timestamp": "19 Jul 2026 19:40:09",
-          "confidence": 0.48823440074920654,
-          "verified": false
-        },
-        {
-          "id": "Eurasian_Bullfinch_3",
-          "spectrogram": "bird_report_20260725_224740_media/spectrograms/Eurasian_Bullfinch_3.png",
-          "audio_report_file": "bird_report_20260725_224740.html",
-          "audio_anchor_id": "audio-Eurasian_Bullfinch_3",
-          "source_file": "20260719_192000.WAV",
-          "offset_s": 44.28943310657596,
-          "timestamp": "19 Jul 2026 19:20:44",
-          "confidence": 0.4807266592979431,
           "verified": false
         }
       ]
