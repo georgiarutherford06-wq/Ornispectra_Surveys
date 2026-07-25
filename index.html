@@ -329,7 +329,108 @@ let sitesIndex = {};        // site name -> { lat, lon, reports:[...] }
 let overrides = {};         // clip verification overrides, key: "reportFile:clipId"
 let overridesSha = null;    // needed to PATCH the overrides file via GitHub API
 let githubToken = sessionStorage.getItem('ornispectra_pat') || null;
-let htmlCache = {};         // reportFile -> raw HTML text (for audio extraction)
+let htmlCache = {};         // reportFile -> Promise<raw HTML text> (in-memory, this tab only)
+let htmlFileShas = {};      // reportFile -> git blob sha (persistent cache key)
+
+// ════════════════════════════════════════════════════════════════════════
+// Report HTML caching — two layers:
+//   1. Persistent (Cache Storage API), keyed by the file's git blob SHA, so
+//      a report downloaded in a past session never has to be re-fetched —
+//      until it's actually regenerated, at which point its SHA changes and
+//      the old entry is simply never looked up again.
+//   2. In-memory (a Promise per reportFile), so concurrent calls within this
+//      tab share one fetch instead of firing duplicates.
+// ════════════════════════════════════════════════════════════════════════
+const REPORT_CACHE_NAME = 'ornispectra-reports-v1';
+
+function reportCacheKey(reportFile) {
+  const sha = htmlFileShas[reportFile];
+  // Falling back to the plain filename (if we somehow don't have a sha yet)
+  // still gives same-session caching — it just won't survive a reload safely.
+  return `https://ornispectra-cache.invalid/${sha || reportFile}`;
+}
+
+async function getPersistedReportHtml(reportFile) {
+  if (!('caches' in window)) return null;
+  try {
+    const cache = await caches.open(REPORT_CACHE_NAME);
+    const match = await cache.match(reportCacheKey(reportFile));
+    return match ? await match.text() : null;
+  } catch (err) {
+    console.warn('Cache Storage read failed:', err.message);
+    return null;
+  }
+}
+
+async function persistReportHtml(reportFile, text) {
+  if (!('caches' in window)) return;
+  try {
+    const cache = await caches.open(REPORT_CACHE_NAME);
+    await cache.put(reportCacheKey(reportFile), new Response(text, { headers: { 'Content-Type': 'text/html' } }));
+  } catch (err) {
+    console.warn('Cache Storage write failed:', err.message); // non-fatal — just no persistence this time
+  }
+}
+
+// Kicks off (or reuses) a fetch of a report's full HTML. Concurrent callers
+// share the same in-flight promise. Call this eagerly (fire-and-forget) as
+// soon as we know a report is likely to be played, so the download happens
+// in the background while the person is still browsing the species list.
+function prefetchReportHtml(reportFile) {
+  if (!htmlCache[reportFile]) {
+    htmlCache[reportFile] = (async () => {
+      const persisted = await getPersistedReportHtml(reportFile);
+      if (persisted != null) return persisted;
+
+      const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
+      if (!res.ok) throw new Error(`report HTML not found (${res.status})`);
+      const text = await res.text();
+      persistReportHtml(reportFile, text); // fire-and-forget; don't block on it
+      return text;
+    })().catch(err => {
+      delete htmlCache[reportFile]; // don't poison the cache — allow a retry later
+      throw err;
+    });
+  }
+  return htmlCache[reportFile];
+}
+
+// Reads a report's HTML as a stream and stops as soon as it has located one
+// specific clip's base64 audio — instead of waiting for the whole file. Since
+// clips appear in a fixed order in the file, this means the cost of playing a
+// clip scales with how far into the file that clip sits, not with the size of
+// the whole report — so as more clips get added over time, only the newest
+// ones near the end get slower; everything earlier stays roughly constant.
+async function extractAudioSrcStreaming(reportFile, marker) {
+  const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
+  if (!res.ok || !res.body) throw new Error(`report HTML not found (${res.status})`);
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  let markerIdx = -1;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) throw new Error('clip not found before end of file');
+    buf += decoder.decode(value, { stream: true });
+
+    if (markerIdx === -1) {
+      markerIdx = buf.indexOf(marker);
+      if (markerIdx === -1) {
+        // Marker not seen yet — keep only a small tail in case it straddles a
+        // chunk boundary, so memory doesn't grow with report size while scanning.
+        if (buf.length > 2000) buf = buf.slice(-500);
+        continue;
+      }
+    }
+
+    const match = buf.slice(markerIdx).match(/data:audio\/wav;base64,([A-Za-z0-9+/=]+)/);
+    if (match) {
+      reader.cancel().catch(() => {});
+      return `data:audio/wav;base64,${match[1]}`;
+    }
+  }
+}
 
 const map = L.map('map', { zoomControl: true }).setView([52.3555, -1.1743], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -349,6 +450,13 @@ async function loadReports() {
     if (!res.ok) throw new Error(`Couldn't list ${CONFIG.reportsPath}/ (${res.status})`);
     const items = await res.json();
     const jsonFiles = items.filter(f => f.name.endsWith('.json'));
+
+    // The listing also gives us each HTML report's git blob SHA — a content
+    // hash that only changes if the file is regenerated. We use it as the
+    // persistent cache key so cached reports survive page reloads safely:
+    // stale entries can never be served, because a changed file gets a new
+    // key automatically.
+    items.filter(f => f.name.endsWith('.html')).forEach(f => { htmlFileShas[f.name] = f.sha; });
 
     const parsed = await Promise.all(jsonFiles.map(async f => {
       // Private repos require auth on the raw download too, not just the listing.
@@ -449,6 +557,11 @@ function showSitePanel(siteName) {
 }
 
 function showReportPanel(siteName, report) {
+  // Start downloading this report's HTML (which holds every clip's audio)
+  // right away, in the background — by the time the person drills into a
+  // species and hits Play, it's likely already cached.
+  prefetchReportHtml(report.report_html_file).catch(() => {});
+
   panelHeader.innerHTML = `
     <button class="back-btn" id="back-to-site">← ${siteName}</button>
     <div class="eyebrow">Survey</div>
@@ -575,18 +688,13 @@ async function loadAuthenticatedBlobUrl(url) {
 
 async function openFullReport(reportFile) {
   try {
-    // Reuse the cached HTML text if we've already fetched it for audio playback;
-    // otherwise fetch fresh. Either way, open it as a real rendered page via a
-    // Blob URL rather than linking straight to raw.githubusercontent.com, which
-    // would (a) fail auth on a plain link for a private repo, and (b) serve the
-    // file as plain text rather than rendering it.
-    const html = htmlCache[reportFile] || await (async () => {
-      const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
-      if (!res.ok) throw new Error(`report not found (${res.status})`);
-      const text = await res.text();
-      htmlCache[reportFile] = text;
-      return text;
-    })();
+    // Reuse the cached HTML text if we've already fetched (or are already
+    // fetching) it — either from an earlier play, or from the background
+    // prefetch kicked off when the report panel was opened. Opening as a
+    // Blob URL rather than linking straight to raw.githubusercontent.com
+    // because that would (a) fail auth on a plain link for a private repo,
+    // and (b) serve the file as plain text rather than rendering it.
+    const html = await prefetchReportHtml(reportFile);
     const blob = new Blob([html], { type: 'text/html' });
     window.open(URL.createObjectURL(blob), '_blank');
   } catch (err) {
@@ -595,20 +703,30 @@ async function openFullReport(reportFile) {
 }
 
 async function extractAudioSrc(reportFile, anchorId) {
-  if (!htmlCache[reportFile]) {
-    const res = await fetch(`${RAW_BASE}/${CONFIG.reportsPath}/${reportFile}`, { headers: ghHeaders() });
-    if (!res.ok) throw new Error(`report HTML not found (${res.status})`);
-    htmlCache[reportFile] = await res.text();
-  }
-  const html = htmlCache[reportFile];
   const marker = `id="${anchorId}"`;
-  const idx = html.indexOf(marker);
-  if (idx === -1) throw new Error('clip not found in report (older report format?)');
 
-  const searchWindow = html.slice(idx, idx + 4_000_000); // audio blob follows shortly after the id
-  const match = searchWindow.match(/data:audio\/wav;base64,([A-Za-z0-9+/=]+)/);
-  if (!match) throw new Error('audio data not found near clip anchor');
-  return `data:audio/wav;base64,${match[1]}`;
+  // Two paths to the same clip: whichever full copy of the report we already
+  // have (in-memory, persisted, or a prefetch already in flight) is one path;
+  // a streaming fetch that stops the moment it locates this one clip's audio
+  // — without waiting for the rest of a possibly-large file — is the other.
+  // Whichever resolves first wins, so a slow/uncached full download never
+  // blocks a single clip that happens to sit early in the file.
+  const cachedPath = prefetchReportHtml(reportFile).then(html => {
+    const idx = html.indexOf(marker);
+    if (idx === -1) throw new Error('clip not found in report (older report format?)');
+    const match = html.slice(idx, idx + 4_000_000).match(/data:audio\/wav;base64,([A-Za-z0-9+/=]+)/);
+    if (!match) throw new Error('audio data not found near clip anchor');
+    return `data:audio/wav;base64,${match[1]}`;
+  });
+
+  const streamedPath = extractAudioSrcStreaming(reportFile, marker);
+
+  try {
+    return await Promise.any([cachedPath, streamedPath]);
+  } catch (err) {
+    // Both paths failed — surface whichever error is more informative.
+    throw (err && err.errors) ? err.errors[err.errors.length - 1] : err;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════
