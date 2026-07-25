@@ -648,6 +648,9 @@
       "files": 4
     }
   },
+  "detected_redlist": [
+    "Northern Lapwing"
+  ],
   "acoustic_health": {
     "biophony_minutes": 38.3,
     "anthropophony_minutes": 30.8,
@@ -1317,9 +1320,11 @@
         "BNG Red List indicator",
         "BoCC5 Red List species \u2014 highest conservation concern"
       ],
-      "verification_reasons": [],
-      "bng_categories": [],
-      "bocc_status": null,
+      "bng_categories": [
+        "canopy",
+        "redlist"
+      ],
+      "bocc_status": "Red",
       "file_count": 7,
       "n_clips": 19,
       "first_detected": "2026-07-12T15:15:31.170159",
