@@ -281,7 +281,6 @@
           <th data-key="n_sites">Sites</th>
           <th data-key="n_surveys">Surveys</th>
           <th data-key="total_clips">Clips</th>
-          <th data-key="verified_pct">Verified</th>
           <th data-key="best_confidence">Best conf.</th>
           <th data-key="bng">BNG categories</th>
           <th data-key="redlist">Red-list</th>
@@ -866,9 +865,6 @@ function renderOverviewTable() {
       <td class="mono">${row.n_sites}</td>
       <td class="mono">${row.n_surveys}</td>
       <td class="mono">${row.total_clips}</td>
-      <td class="mono">
-        <span class="verified-bar"><span class="verified-bar-fill" style="width:${verifiedPct}%"></span></span>${verifiedPct}% (${row.verified_clips}/${row.sampled_clips} sampled)
-      </td>
       <td class="mono">${(row.best_confidence * 100).toFixed(0)}%</td>
       <td>${row.bng.map(c => `<span class="bng-tag">${c}</span>`).join('') || '—'}</td>
       <td>${row.redlist ? '<span class="redlist-flag">⚠ Yes</span>' : '—'}</td>
@@ -884,7 +880,7 @@ function renderOverviewTable() {
         occTr.className = 'occurrence-row';
         occTr.style.display = 'none';
         occTr.innerHTML = `
-          <td colspan="9">
+          <td colspan="8">
             <span class="occ-site">${occ.siteName}</span>
             — ${occ.surveyDate || 'undated'} · ${occ.species.n_clips} clip${occ.species.n_clips !== 1 ? 's' : ''} · ${(occ.confidence * 100).toFixed(0)}% confidence
             <span class="occ-arrow">→ view spectrograms</span>
