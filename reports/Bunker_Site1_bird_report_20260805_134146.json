@@ -510,8 +510,7 @@
     }
   },
   "detected_redlist": [
-    "Spotted Flycatcher",
-    "Song Thrush"
+    "Spotted Flycatcher"
   ],
   "acoustic_health": {
     "biophony_minutes": 2.1,
@@ -1401,12 +1400,10 @@
       "is_marginal": true,
       "verification_reasons": [
         "Low AI confidence (1\u2605 \u2014 below 3\u2605 threshold)",
-        "Detected in only one recording file \u2014 limited survey presence",
-        "BNG Red List indicator"
+        "Detected in only one recording file \u2014 limited survey presence"
       ],
       "bng_categories": [
-        "ground",
-        "redlist"
+        "ground"
       ],
       "bocc_status": "Amber",
       "file_count": 1,
