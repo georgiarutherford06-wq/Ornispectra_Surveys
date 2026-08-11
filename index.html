@@ -548,7 +548,6 @@ function showSitePanel(siteName) {
     card.innerHTML = `
       <div class="date mono">${r.survey.survey_start} → ${r.survey.survey_end}</div>
       <div class="meta">${r.survey.n_species} species · ${r.survey.n_files} files</div>
-      <span class="health-pill ${healthClass}">${r.acoustic_health?.health_category || 'Unknown'}</span>
     `;
     card.addEventListener('click', () => showReportPanel(siteName, r));
     list.appendChild(card);
@@ -572,12 +571,6 @@ function showReportPanel(siteName, report) {
   document.getElementById('open-full-report').addEventListener('click', () => openFullReport(report.report_html_file));
 
   panelScroll.innerHTML = '';
-
-  const verdict = document.createElement('div');
-  verdict.className = 'report-card';
-  verdict.style.marginBottom = '16px';
-  verdict.innerHTML = `<div class="meta">${report.ecological_verdict || ''}</div>`;
-  panelScroll.appendChild(verdict);
 
   report.species.forEach(sp => {
     const row = document.createElement('div');
